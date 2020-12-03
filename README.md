@@ -1,5 +1,4 @@
-# blender_addon_bake_UDIM
-How to simply bake UDIM with Blender in just one click
+# bake UDIMs in Blender
 
 - Select Object
 - go into edit mode and create desired amount of UDIM tiles
