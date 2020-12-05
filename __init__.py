@@ -131,7 +131,7 @@ def bake_udim(context):
 					
 					if obj.mode == 'EDIT':
 						bpy.ops.object.editmode_toggle()
-					bake = images.new("bake", udim.size[0], udim.size[1], alpha=False, float_buffer=udim.is_float, stereo3d=False, is_data=False, tiled=False)
+					bake = images.new("bake", udim.size[0], udim.size[1], alpha=True, float_buffer=udim.is_float, stereo3d=False, is_data=False, tiled=False)
 					bake_node = nodes.new("ShaderNodeTexImage")
 					bake_node.name = "bake_image"
 					bake_node.image = bake    
@@ -142,6 +142,8 @@ def bake_udim(context):
 					filepath = udim_dir+'/'+udim_name+'.'+str(n)+"."+ext
 					print(filepath)
 					bake.filepath = filepath
+					
+					bake.source = 'FILE'
 					
 					check_multires = bpy.data.scenes['Scene'].render.use_bake_multires
 					type = bpy.context.scene.cycles.bake_type
