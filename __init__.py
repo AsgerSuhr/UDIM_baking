@@ -114,7 +114,6 @@ def bake_udim(context):
 				list.append(t.number)
 				
 			i = 0
-			l = len(list)-1
 
 			if obj.mode != 'EDIT':
 				bpy.ops.object.editmode_toggle()            
@@ -180,7 +179,7 @@ def bake_udim(context):
 class SCENE_OT_Bake_Udim(bpy.types.Operator):
 	"""Select a UDIM Image Node"""
 	bl_idname = "object.bake_udim"
-	bl_label = "Bake for UDIM Image"
+	bl_label = "Bake UDIM to tiles"
 
 	@classmethod
 	def poll(cls, context):
