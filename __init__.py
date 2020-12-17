@@ -179,7 +179,7 @@ def bake_udim(context):
 class SCENE_OT_Bake_Udim(bpy.types.Operator):
 	"""Select a UDIM Image Node"""
 	bl_idname = "object.bake_udim"
-	bl_label = "Bake UDIM to tiles"
+	bl_label = "Bake to UDIM tiles"
 
 	@classmethod
 	def poll(cls, context):
