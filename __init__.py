@@ -1,5 +1,5 @@
 bl_info = {
-	"name": "Bake UDIM Tiles",
+	"name": "UDIM Baker",
 	"author": "Alfonso Annarumma & Asger Suhr Langhoff",
 	"version": (0, 1),
 	"blender": (2, 80, 0),
