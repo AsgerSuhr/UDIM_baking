@@ -130,6 +130,7 @@ def bake_udim(context):
 					
 					if obj.mode == 'EDIT':
 						bpy.ops.object.editmode_toggle()
+						
 					bake = images.new("bake", udim.size[0], udim.size[1], alpha=True, float_buffer=udim.is_float, stereo3d=False, is_data=False, tiled=False)
 					bake_node = nodes.new("ShaderNodeTexImage")
 					bake_node.name = "bake_image"
