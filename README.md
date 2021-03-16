@@ -13,3 +13,7 @@ building on the code from Alfonso Annarumma: https://github.com/anfeo/blender_ad
 - make sure the texture node is selected
 - Set Bake Parameters
 - Click on Bake for UDIM Image
+
+# Youtube Link
+
+https://www.youtube.com/watch?v=msVZb_Ola5E&t=3s&ab_channel=AsgerLanghoff
