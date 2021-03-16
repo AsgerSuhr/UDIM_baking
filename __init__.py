@@ -1,7 +1,7 @@
 bl_info = {
 	"name": "UDIM Baker",
 	"author": "Alfonso Annarumma & Asger Suhr Langhoff",
-	"version": (0, 1),
+	"version": (0, 2),
 	"blender": (2, 80, 0),
 	"location": "Properties > Render Properties > Bake",
 	"description": "Baking UDIM Tiles with one click",
@@ -12,20 +12,23 @@ bl_info = {
 
 
 import bpy
+from bpy.types import Operator, Object, Context
 import os
 import bmesh
+from typing import Dict, Tuple
 
 
 
-def create_udim_dictionary(obj):
-	"""[creates a dictionary of the UDIM tiles
-	that have vertices in them]
-
-	Args:
-		obj ([blender mesh object]): [current mesh object]
+def create_udim_dictionary(obj:Object) -> Dict[int,Tuple[int, int]]:
+	"""
+	creates a dictionary of the UDIM tiles
+	that have vertices in them, 
+	because if they have vertices in them they are valid.
+	it returns the column and row because it's important to move the uv's
+	back to their original space.
 
 	Returns:
-		[dictionary]: [contains all the uv vectors, for each UDIM]
+		[dictionary]: [UDIM number, uv vector (column, row)]
 	"""
 	me = obj.data
 	bm = bmesh.new()
@@ -46,14 +49,10 @@ def create_udim_dictionary(obj):
 	return tiles
 
 
-def uv_translate(tiles, obj, udim):
-	"""[Moves the current udim to UDIM 1001 position,
-	the only UDIM that blender bakes]
-
-	Args:
-		tiles ([tuple]): [should contain the original row and column of the current UDIM]
-		obj ([blender mesh object]): [current mesh object]
-		udim ([integer]): [UDIM number]
+def uv_translate(tiles:Tuple[int,int], obj:Object, udim:int) -> None:
+	"""
+	Moves the current UDIM tile to UDIM 1001 position,
+	the only UDIM tile that blender bakes to.
 	"""
 	me = obj.data
 	bm = bmesh.new()
@@ -68,15 +67,9 @@ def uv_translate(tiles, obj, udim):
 	
 
 
-def uv_restore(tiles, obj, udim):
-	"""[Moves the current udim back to its original position]
-
-	Args:
-		tiles ([tuple]): [should contain the original row and column of the current UDIM]
-		obj ([blender mesh object]): [current mesh object]
-		udim ([integer]): [UDIM number]
-	"""
-
+def uv_restore(tiles:Tuple[int,int], obj:Object, udim:int) -> None:
+	"""Moves the current udim back to its original position"""
+	
 	me = obj.data
 	bm = bmesh.new()
 	bm = bmesh.from_edit_mesh(me)
@@ -89,75 +82,103 @@ def uv_restore(tiles, obj, udim):
 	me.update()
 	
 
-def bake_udim(context):
+def bake_udim(context:Context) -> None:
+	"""Main loop for baking to UDIM tiles"""
+
+	# acessing necesarry data and storing it in easy to read variables
 	obj = context.scene.view_layers[0].objects.active
-	
 	data = bpy.data
 	images = data.images
 	mat = obj.active_material
 	nodes = mat.node_tree.nodes
+
+	# checks whether the active texture node is image texture node and that it's UDIM tiled
 	if nodes.active.type == 'TEX_IMAGE':
 		if nodes.active.image.source =='TILED':
 			
+			# storing udim node and the image
 			udim_node = nodes.active
 			udim = udim_node.image
+
+			# storing the path to the image file
 			basename = bpy.path.basename(udim.filepath) 
+			
+			# getting the udim image name: udimImage.1001.png -> udimImage
 			udim_name = basename.split('.')[0] 
+
+			# getting the directory storing the images
 			udim_dir = os.path.dirname(bpy.path.abspath(udim.filepath))
+
+			# getting the extension
 			split = udim.filepath.split('.') 
 			ext = split[-1] 
 			
-
+			# getting a list with all the udim tiles numbers
 			list = []
-
 			for t in udim.tiles:
 				list.append(t.number)
-				
-			i = 0
 
+			# creates a dictionary with udim tiles
 			if obj.mode != 'EDIT':
 				bpy.ops.object.editmode_toggle()            
 			tiles = create_udim_dictionary(obj)
 			if obj.mode == 'EDIT':
 				bpy.ops.object.editmode_toggle()
+
+			i = 0
 			for n in list:
 				if n in tiles.keys():
 
+					# moves the current UV's to tile 1001, the only tile that blender bakes to
 					if obj.mode != 'EDIT':
-						bpy.ops.object.editmode_toggle()
-					
-						uv_translate(tiles, obj, n)
-					
+						bpy.ops.object.editmode_toggle()                    
+						uv_translate(tiles, obj, n)                    
 					if obj.mode == 'EDIT':
 						bpy.ops.object.editmode_toggle()
-						
+					
+					# creates a new image to bake to
 					bake = images.new("bake", udim.size[0], udim.size[1], alpha=True, float_buffer=udim.is_float, stereo3d=False, is_data=False, tiled=False)
+
+					# copies the colorspace and alpha mode from the original image
+					bake.colorspace_settings.name = udim.colorspace_settings.name
+					bake.alpha_mode = udim.alpha_mode
+
+					# creates a new texture image node that we can tell blender to bake to
 					bake_node = nodes.new("ShaderNodeTexImage")
 					bake_node.name = "bake_image"
-					bake_node.image = bake    
+
+					# assigns our new image to this node
+					bake_node.image = bake
+
+					# set it to be the active and selected node
 					nodes.active = bake_node
 					bake_node.select = True
 					
-					
+					# make our filepath to save the new image to 
 					filepath = udim_dir+'/'+udim_name+'.'+str(n)+"."+ext
 					print(filepath)
 					bake.filepath = filepath
 					
 					bake.source = 'FILE'
 					
+					# checks if multiresolution baking is on or not
 					check_multires = bpy.data.scenes['Scene'].render.use_bake_multires
 					type = bpy.context.scene.cycles.bake_type
 					
+					# bakes image
 					if check_multires:
 						bpy.ops.object.bake_image()
 					else:
 						bpy.ops.object.bake(type = type, filepath=filepath, save_mode='EXTERNAL')
 					
+					# saves image
 					bake.save()
 					
+					# celanup
 					nodes.remove(bake_node)
 					images.remove(bake)
 					
+					# puts the current UV's back to it's original tile
 					if obj.mode != 'EDIT':
 						bpy.ops.object.editmode_toggle()
 					
@@ -177,7 +198,7 @@ def bake_udim(context):
 		print("Select Udim Node")
 		
 		
-class SCENE_OT_Bake_Udim(bpy.types.Operator):
+class SCENE_OT_Bake_Udim(Operator):
 	"""Select a UDIM Image Node"""
 	bl_idname = "object.bake_udim"
 	bl_label = "Bake to UDIM tiles"
@@ -188,12 +209,12 @@ class SCENE_OT_Bake_Udim(bpy.types.Operator):
 
 	def execute(self, context):
 		
-		bake_udim(bpy.context)
+		bake_udim(context)
 		
 		return {'FINISHED'}
 
 def menu_func(self, context):
-	
+	"""Adds the addon operator to the layout"""
 	layout = self.layout
 	layout.operator("object.bake_udim")
 
