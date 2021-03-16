@@ -1,6 +1,6 @@
 building on the code from Alfonso Annarumma: https://github.com/anfeo/blender_addon_bake_UDIM
 
-![image]./images/Blendermarket.png
+![image](images/Blendermarket.png)
 
 # bake UDIMs in Blender
 
