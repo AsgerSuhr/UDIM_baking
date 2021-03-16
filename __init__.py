@@ -1,12 +1,13 @@
 bl_info = {
     "name": "UDIM Baker",
     "author": "Alfonso Annarumma & Asger Suhr Langhoff",
-    "version": (0, 2),
+    "version": (1, 2),
     "blender": (2, 80, 0),
     "location": "Properties > Render Properties > Bake",
-    "description": "Baking UDIM Tiles with one click",
+    "description": "Baking UDIM Tiles with one click. \
+	You can check the baking progress if you have the console window open.",
     "warning": "",
-    "wiki_url": "",
+    "wiki_url": "https://github.com/AsgerSuhr/UDIM_baking",
     "category": "Render",
 }
 
@@ -16,8 +17,26 @@ from bpy.types import Operator, Object, Context
 import os
 import bmesh
 from typing import Dict, Tuple
+import sys, time
 
-
+def update_progress(progress):
+    barLength = 10 # Modify this to change the length of the progress bar
+    status = ""
+    if isinstance(progress, int):
+        progress = float(progress)
+    if not isinstance(progress, float):
+        progress = 0
+        status = "error: progress var must be float\r\n"
+    if progress < 0:
+        progress = 0
+        status = "Halt...\r\n"
+    if progress >= 1:
+        progress = 1
+        status = "Done...\r\n"
+    block = int(round(barLength*progress))
+    text = "\rPercent: [{0}] {1}% {2}".format( "#"*block + "-"*(barLength-block), progress*100, status)
+    sys.stdout.write(text)
+    sys.stdout.flush()
 
 def create_udim_dictionary(obj:Object) -> Dict[int,Tuple[int, int]]:
     """
@@ -158,7 +177,7 @@ def bake_udim(context:Context) -> None:
                     
                     # make our filepath to save the new image to 
                     filepath = udim_dir+'/'+udim_name+'.'+str(n)+"."+ext
-                    print(filepath)
+                    print(filepath + '\n')
                     bake.filepath = filepath
                     
                     bake.source = 'FILE'
@@ -190,6 +209,7 @@ def bake_udim(context:Context) -> None:
                         bpy.ops.object.editmode_toggle()
                     i += 1
                     wm.progress_update(i)
+                    update_progress(i/len(list))
                     
                 
             wm.progress_end()
@@ -211,11 +231,10 @@ class SCENE_OT_Bake_Udim(Operator):
         return context.active_object is not None
 
     def execute(self, context):
-        wm = context.window_manager
-        context.window_manager.modal_handler_add(self)
+
         bake_udim(context)
         
-        return {'RUNNING_MODAL'}
+        return {'FINISHED'}
 
 def menu_func(self, context):
     """Adds the addon operator to the layout"""
@@ -233,3 +252,5 @@ def unregister():
 
 if __name__ == "__main__":
     register()
+
+
