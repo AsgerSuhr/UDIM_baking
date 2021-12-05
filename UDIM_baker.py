@@ -105,7 +105,8 @@ def bake_udim(context:Context) -> None:
     """Main loop for baking to UDIM tiles"""
 
     # acessing necesarry data and storing it in easy to read variables
-    obj = context.scene.view_layers[0].objects.active
+    scene = context.scene
+    obj = scene.view_layers[0].objects.active
     data = bpy.data
     images = data.images
     mat = obj.active_material
@@ -183,8 +184,8 @@ def bake_udim(context:Context) -> None:
                     bake.source = 'FILE'
                     
                     # checks if multiresolution baking is on or not
-                    check_multires = bpy.data.scenes['Scene'].render.use_bake_multires
-                    type = bpy.context.scene.cycles.bake_type
+                    check_multires = scene.render.use_bake_multires
+                    type = scene.cycles.bake_type
                     
                     # bakes image
                     if check_multires:
